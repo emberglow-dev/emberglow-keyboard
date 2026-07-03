@@ -3,6 +3,8 @@
 Light your **Keychron Q10** based on what Claude is doing. Emberglow turns your
 keyboard's RGB into an ambient status light:
 
+![Emberglow lighting a Keychron Q10 in response to Claude activity](examples/emberglow-demo.gif)
+
 | State | Look | Fires when |
 |-------|------|------------|
 | `working` | blue, solid | Claude starts working |
@@ -19,8 +21,6 @@ on lifecycle events can drive it:
 - **Anthropic (Managed Agents) webhooks** → the server: `emberglow serve`
 - **OpenAI Codex CLI** and **Google Antigravity** → their notify/hook systems
   (see [below](#use-it-with-openai-codex-cli))
-
-![Emberglow lighting a Keychron Q10 in response to Claude activity](examples/emberglow-demo.gif)
 
 ---
 
