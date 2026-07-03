@@ -2,20 +2,34 @@
   "//": "Example Claude Code hooks for Emberglow. Copy the `hooks` block into",
   "//2": "your ~/.claude/settings.json (all projects) or .claude/settings.json",
   "//3": "(this project). `emberglow` must be on PATH — see examples/emberglow-hook",
-  "//4": "for a wrapper if you installed it in a virtualenv.",
+  "//4": "for a wrapper if you installed it in a virtualenv (avoids hard-coding an",
+  "//5": "absolute path to .venv/Scripts/emberglow.exe here).",
 
   "hooks": {
     "UserPromptSubmit": [
       { "hooks": [{ "type": "command", "command": "emberglow set working" }] }
     ],
     "Notification": [
-      { "hooks": [{ "type": "command", "command": "emberglow set needsyou" }] }
+      {
+        "matcher": "permission_prompt",
+        "hooks": [{ "type": "command", "command": "emberglow set needsyou" }]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [{ "type": "command", "command": "emberglow set needsyou" }]
+      }
     ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "emberglow set done" }] }
     ],
     "SubagentStop": [
       { "hooks": [{ "type": "command", "command": "emberglow set done" }] }
+    ],
+    "StopFailure": [
+      { "hooks": [{ "type": "command", "command": "emberglow set failed" }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "emberglow restore" }] }
     ]
   }
 }

@@ -11,10 +11,14 @@ keyboard's RGB into an ambient status light:
 | `failed` | red, solid | something errored / a run failed |
 
 It talks to the keyboard over the **VIA protocol (QMK raw HID)** — no extra
-software, no OpenRGB server — and plugs into Claude two ways:
+software, no OpenRGB server. It was built for **Claude Code**, but the CLI
+(`emberglow set <state>`) is tool-agnostic, so any agent that can run a command
+on lifecycle events can drive it:
 
 - **Claude Code hooks** → the CLI: `emberglow set needsyou`
 - **Anthropic (Managed Agents) webhooks** → the server: `emberglow serve`
+- **OpenAI Codex CLI** and **Google Antigravity** → their notify/hook systems
+  (see [below](#use-it-with-openai-codex-cli))
 
 ---
 
@@ -25,9 +29,27 @@ software, no OpenRGB server — and plugs into Claude two ways:
 - The **VIA app/tab closed** while Emberglow runs — only one process can hold the
   raw-HID interface at a time.
 
-> Emberglow is built and tested against the Q10, but the VIA/QMK approach works
-> for most VIA-enabled QMK boards. Other boards need their USB VID/PID and effect
-> indices — see [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
+---
+
+## Supported keyboards
+
+| Keyboard | Status | VID:PID | VIA dialect |
+|----------|--------|---------|-------------|
+| **Keychron Q10** | ✅ Tested on real hardware | `3434:01A1` | v2 |
+
+Emberglow is built and tested against the **Keychron Q10**, but nothing in the
+lighting engine is Q10-specific — the **VIA protocol (QMK raw HID)** it speaks is
+shared across VIA-enabled QMK boards. Any such board should work once you point
+Emberglow at it:
+
+1. `emberglow enumerate` — find the board's USB **VID/PID** and its raw-HID
+   interface (`usage_page=0xFF60`).
+2. `emberglow probe` — discover the firmware-specific **effect indices**
+   (breathing / solid) by flashing each one.
+3. Plug those values in — see [`docs/PROTOCOL.md`](docs/PROTOCOL.md) for exactly
+   what to change.
+
+Got another board working? A PR adding it to this table is welcome.
 
 ---
 
@@ -117,6 +139,87 @@ Test a hook by hand — it's just the CLI:
 emberglow set needsyou     # keyboard breathes amber
 emberglow set done         # green flash, then restores your lighting
 ```
+
+---
+
+## Use it with OpenAI Codex CLI
+
+Codex CLI can run an external program on lifecycle events via the `notify`
+option in `~/.codex/config.toml`, passing the event as a JSON string in the
+program's final argument. Today Codex emits **only** the `agent-turn-complete`
+event — it fires when Codex finishes a turn and hands control back to you — so
+the natural mapping is turn-complete → `needsyou`.
+
+`~/.codex/config.toml`:
+
+```toml
+notify = ["python3", "/abs/path/to/emberglow-notify.py"]
+```
+
+`emberglow-notify.py`:
+
+```python
+#!/usr/bin/env python3
+"""Codex `notify` bridge → Emberglow. Codex passes the event as JSON in argv[1]."""
+import json, subprocess, sys
+
+if len(sys.argv) >= 2:
+    try:
+        event = json.loads(sys.argv[1])
+    except json.JSONDecodeError:
+        event = {}
+    if event.get("type") == "agent-turn-complete":
+        # Codex finished the turn and is waiting on you.
+        subprocess.run(["emberglow", "set", "needsyou"], check=False)
+```
+
+> **Limitation:** Codex's `notify` currently exposes only `agent-turn-complete`,
+> so there's no native "started working" signal. To also light `working`, wrap
+> the `codex` command in a shell alias/function that runs `emberglow set working`
+> before launching Codex.
+
+Payload fields are documented in the Codex
+[advanced configuration docs](https://developers.openai.com/codex/config-advanced).
+
+---
+
+## Use it with Google Antigravity
+
+> ⚠️ **Verify against the current docs before relying on this.** Antigravity's
+> hooks are documented on a JavaScript-rendered site that couldn't be read
+> verbatim; the config below is corroborated from Google Cloud Community and
+> third-party write-ups, **not** confirmed against the primary docs. Treat the
+> exact event names and file paths as *probably right, worth double-checking*.
+
+Antigravity supports **hooks** — shell commands run on agent lifecycle events —
+defined in a `hooks.json` file, either globally
+(`~/.gemini/antigravity-cli/hooks.json`) or per workspace
+(`<project>/.agents/hooks.json`). Reported events include `PreInvocation`,
+`PostInvocation`, `PreToolUse`, `PostToolUse`, and `Stop`.
+
+```json
+{
+  "emberglow-working": {
+    "PreInvocation": [
+      { "hooks": [ { "type": "command", "command": "emberglow set working", "timeout": 10 } ] }
+    ]
+  },
+  "emberglow-done": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "emberglow set done", "timeout": 10 } ] }
+    ]
+  }
+}
+```
+
+Two Antigravity-specific caveats:
+
+- Unlike Claude Code / Codex fire-and-forget hooks, Antigravity hooks are
+  **decision gates**: the script reads event JSON on **stdin** and is expected to
+  emit an allow/deny JSON verdict on **stdout** and exit `0`. For a pure side
+  effect like `emberglow set`, run the command, then print an "allow" response.
+- No lifecycle event corresponding to **"waiting for your approval/input"** is
+  confirmed, so `needsyou` may not be expressible here yet.
 
 ---
 
