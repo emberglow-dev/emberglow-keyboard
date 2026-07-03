@@ -20,6 +20,8 @@ on lifecycle events can drive it:
 - **OpenAI Codex CLI** and **Google Antigravity** → their notify/hook systems
   (see [below](#use-it-with-openai-codex-cli))
 
+![Emberglow lighting a Keychron Q10 in response to Claude activity](examples/emberglow-demo.gif)
+
 ---
 
 ## Requirements
