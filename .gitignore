@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Emberglow runtime state (saved pre-takeover lighting snapshot)
+.emberglow_state.json
+.kb_q10_state.json
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets — never commit your webhook signing key
+.env
+.env.*
+
+# Local, machine-specific Claude Code settings (contain absolute file paths /
+# usernames). The shared, path-free example lives in examples/.
+.claude/settings.local.json

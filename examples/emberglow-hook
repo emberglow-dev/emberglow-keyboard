@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Wrapper for calling Emberglow from a Claude Code hook when it lives in a
+# virtualenv (so `emberglow` isn't on your global PATH).
+#
+# 1. Edit VENV below to point at your project's venv.
+# 2. Make this executable:  chmod +x examples/emberglow-hook
+# 3. Use its full path as the hook command, e.g.:
+#      "command": "/abs/path/to/examples/emberglow-hook needsyou"
+#
+# It never fails the hook: a missing/absent keyboard just logs and exits 0,
+# so your Claude Code session is never blocked by lighting.
+
+VENV="${EMBERGLOW_VENV:-$HOME/PycharmProjects/emberglow-keyboard/.venv}"
+
+if [ -x "$VENV/bin/emberglow" ]; then
+  EMBERGLOW="$VENV/bin/emberglow"          # macOS / Linux
+elif [ -x "$VENV/Scripts/emberglow.exe" ]; then
+  EMBERGLOW="$VENV/Scripts/emberglow.exe"  # Windows (Git Bash)
+else
+  EMBERGLOW="emberglow"                    # fall back to PATH
+fi
+
+"$EMBERGLOW" set "$1" || true

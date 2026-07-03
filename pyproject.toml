@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emberglow-keyboard"
+version = "0.1.0"
+description = "Light your Keychron Q10 from Claude Code hooks and Anthropic webhooks."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "emberglow-dev" }]
+keywords = ["keychron", "qmk", "via", "claude", "anthropic", "webhooks", "rgb"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "hidapi>=0.14",
+    "flask>=3",
+    "anthropic[webhooks]>=0.40",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/emberglow-dev/emberglow-keyboard"
+Issues = "https://github.com/emberglow-dev/emberglow-keyboard/issues"
+
+[project.scripts]
+emberglow = "emberglow.cli:main"
+
+[tool.setuptools]
+packages = ["emberglow"]
+
+[tool.pytest.ini_options]
+markers = [
+    "hardware: needs a physically-connected keyboard (deselected by default)",
+]
+# Skip hardware tests unless explicitly requested with: pytest -m hardware
+addopts = "-m 'not hardware'"
+testpaths = ["tests"]
